@@ -14,8 +14,8 @@ func init() {
 	currentDir = path.Dir(filename)
 }
 
-//RunUAT executes the script which builds and run the Docker with UAT code
-func RunUAT(buildEnv, gitSHA, reportURL string) ([]byte, error) {
+//Rune2e executes the script which builds and run the Docker with e2e code
+func Rune2e(buildEnv, gitSHA, reportURL string) ([]byte, error) {
 	cmd := exec.Command("./script.sh", buildEnv, gitSHA, reportURL)
 	fmt.Println(cmd.Args)
 	cmd.Dir = currentDir

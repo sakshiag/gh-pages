@@ -19,8 +19,8 @@ type GitRef struct {
 	} `json:"object"`
 }
 
-const gitAPI = "https://github.ibm.com/api/v3/repos/blueprint/bluemix-terraform-provider-dev/git/refs/heads/master"
-const defaultReportURL = "http://9.47.83.184:8080"
+const gitAPI = "https://github.ibm.com/api/v3/repos/terraform-devops-tools/e2etest/git/refs/heads/master"
+const defaultReportURL = "http://localhost:8080"
 
 func init() {
 	httpClient = &http.Client{CheckRedirect: nil}
@@ -48,8 +48,8 @@ func headSHA() (string, error) {
 	return ref.Object.Sha, nil
 }
 
-//UATHandler handles request to kickoff UAT
-func UATHandler(w http.ResponseWriter, r *http.Request) {
+//e2eHandler handles request to kickoff e2e
+func E2EHandler(w http.ResponseWriter, r *http.Request) {
 	buildEnv := r.Header.Get("BUILD_ENV")
 	gitSHA := r.Header.Get("GIT_SHA")
 	reportURL := r.Header.Get("REPORT_URL")
@@ -75,14 +75,14 @@ func UATHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		gitSHA = sha
-		log.Println("Will run UAT against", gitSHA)
+		log.Println("Will run e2e against", gitSHA)
 	}
 
 	go func() {
-		output, _ := RunUAT(buildEnv, gitSHA, reportURL)
+		output, _ := Rune2e(buildEnv, gitSHA, reportURL)
 		fmt.Printf("%s\n", output)
 	}()
 
-	io.WriteString(w, "Request to start the UAT submitted succefully")
+	io.WriteString(w, "Request to start the e2e submitted succefully")
 
 }

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.ibm.com/ashishth/uatrunner/utils"
+	"github.ibm.com/terraform-devops-tools/e2erunner/utils"
 )
 
 func main() {
@@ -13,7 +13,7 @@ func main() {
 	flag.IntVar(&port, "p", 9080, "Port on which this server listens")
 	flag.Parse()
 	mux := http.NewServeMux()
-	mux.HandleFunc("/uat", utils.UATHandler)
+	mux.HandleFunc("/e2e", utils.E2EHandler)
 	fmt.Println("Server will listen at port", port)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", port), mux)
 	if err != nil {
