@@ -21,7 +21,7 @@ echo "Checking out $GIT_SHA to temp branch"
 git checkout -b temp $GIT_SHA
 
 #Prep the e2erunner environment with DOCKER_USER and DOCKER_PASSWORD env variables
-sudo docker login -u "sakshiag@in.ibm.com" -p "varun@1989" -e "sakshiag@in.ibm.com" $artifactory_registry
+sudo docker login -u "$DOCKER_USER" -p "$DOCKER_PASSWORD" -e "$DOCKER_EMAIL" $artifactory_registry
 
 echo "Building the docker e2erunner:${BUILD_ENV}_${GIT_SHA}"
 sudo docker build -t e2erunner:${BUILD_ENV}_${GIT_SHA} .
