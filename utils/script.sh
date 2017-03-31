@@ -9,9 +9,24 @@ BUILD_ENV=$1
 GIT_SHA=$2
 REPORT_URL=$3
 CODE_REPO=/tmp/${BUILD_ENV}/${GIT_SHA}
+TERRAFORM_CODE_REPO=/tmp/terraform
 GIT_REPO=git@github.ibm.com:sakshiag/e2etest.git
+TERRAFORM_GIT_REPO=git@github.ibm.com:blueprint/bluemix-terraform-provider-dev.git
+
+mkdir -p $TERRAFORM_CODE_REPO
+
+cd $TERRAFORM_CODE_REPO
+
+echo "Cloning $TERRAFORM_GIT_REPO at  $TERRAFORM_CODE_REPO"
+
+git clone $TERRAFORM_GIT_REPO .
+
+make
+
+make dev
 
 mkdir -p $CODE_REPO
+
 cd $CODE_REPO
 
 echo "Cloning $GIT_REPO at  $CODE_REPO"
