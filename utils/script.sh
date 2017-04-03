@@ -11,18 +11,9 @@ REPORT_URL=$3
 CODE_REPO=/tmp/${BUILD_ENV}/${GIT_SHA}
 TERRAFORM_CODE_REPO=/tmp/terraform_build
 GIT_REPO=git@github.ibm.com:sakshiag/e2etest.git
-#TERRAFORM_GIT_REPO=git@github.ibm.com:blueprint/bluemix-terraform-provider-dev.git
+
 
 cd $TERRAFORM_CODE_REPO
-
-curl https://github.ibm.com/blueprint/bluemix-terraform-provider-dev/releases/download/ibmcloud-v0.2-beta/linux_amd64.zip
-
-unzip linux_amd64.zip
-#echo "Cloning $TERRAFORM_GIT_REPO at  $TERRAFORM_CODE_REPO"
-#git clone $TERRAFORM_GIT_REPO 
-#make
-#make dev
-
 
 mkdir -p $CODE_REPO
 
@@ -33,9 +24,6 @@ git clone $GIT_REPO .
 
 echo "Checking out $GIT_SHA to temp branch"
 git checkout -b temp $GIT_SHA
-
-
-
 
 
 #Prep the e2erunner environment with DOCKER_USER and DOCKER_PASSWORD env variables
