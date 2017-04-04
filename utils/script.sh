@@ -29,7 +29,7 @@ git checkout -b temp $GIT_SHA
 sudo docker login -u "$DOCKER_USER" -p "$DOCKER_PASSWORD" -e "$DOCKER_EMAIL" $artifactory_registry
 
 echo "Building the docker e2erunner:${BUILD_ENV}_${GIT_SHA}"
-sudo docker build -t e2erunner:${BUILD_ENV}_${GIT_SHA} .
+sudo docker build --build-arg FTP_USERNAME="${FTP_USERNAME}" --build-arg FTP_PASSWORD="${FTP_PASSWORD}" -t e2erunner:${BUILD_ENV}_${GIT_SHA} .
 
 echo "Run the docker which will run the e2e by calling build.sh of the main repo"
 #SL_USERNAME and SL_API_KEY must be set in the e2e runner enviroments
