@@ -45,6 +45,6 @@ sudo docker run -d  --name ${BUILD_ENV}_${GIT_SHA} \
 -e SL_API_KEY="${SL_API_KEY}" \
 -e IBMID="${IBMID}" \
 -e IBMID_PASSWORD="${IBMID_PASSWORD}" \
--e FTP_USERNMAME="${FTP_USERNMAME}" \
+-e FTP_USERNAME="${FTP_USERNAME}" \
 -e FTP_PASSWORD="${FTP_PASSWORD}" \
 e2erunner:${BUILD_ENV}_${GIT_SHA}
