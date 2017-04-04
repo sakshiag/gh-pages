@@ -11,9 +11,6 @@ REPORT_URL=$3
 CODE_REPO=/tmp/${BUILD_ENV}/${GIT_SHA}
 GIT_REPO=git@github.ibm.com:sakshiag/e2etest.git
 
-
-
-
 mkdir -p $CODE_REPO
 
 cd $CODE_REPO
