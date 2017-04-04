@@ -9,7 +9,7 @@ BUILD_ENV=$1
 GIT_SHA=$2
 REPORT_URL=$3
 CODE_REPO=/tmp/${BUILD_ENV}/${GIT_SHA}
-GIT_REPO=git@github.ibm.com:sakshiag/e2etest.git
+GIT_REPO=git@github.ibm.com:terraform-devops-tools/e2etest.git
 
 mkdir -p $CODE_REPO
 
