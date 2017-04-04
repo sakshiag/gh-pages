@@ -20,7 +20,7 @@ type GitRef struct {
 }
 
 const gitAPI = "https://github.ibm.com/api/v3/repos/sakshiag/e2etest/git/refs/heads/master"
-const defaultReportURL = "http://localhost:8080"
+const defaultReportURL = "http://9.47.80.212:8080"
 
 func init() {
 	httpClient = &http.Client{CheckRedirect: nil}

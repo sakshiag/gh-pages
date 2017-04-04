@@ -9,11 +9,10 @@ BUILD_ENV=$1
 GIT_SHA=$2
 REPORT_URL=$3
 CODE_REPO=/tmp/${BUILD_ENV}/${GIT_SHA}
-TERRAFORM_CODE_REPO=/tmp/terraform_build
 GIT_REPO=git@github.ibm.com:sakshiag/e2etest.git
 
 
-cd $TERRAFORM_CODE_REPO
+
 
 mkdir -p $CODE_REPO
 
@@ -34,6 +33,7 @@ sudo docker build -t e2erunner:${BUILD_ENV}_${GIT_SHA} .
 
 echo "Run the docker which will run the e2e by calling build.sh of the main repo"
 #SL_USERNAME and SL_API_KEY must be set in the e2e runner enviroments
+#FTP_USERNMAME and FTP_PASSWORD must be set in the e2e runner environments
 sudo docker run -d  --name ${BUILD_ENV}_${GIT_SHA} \
 -e e2e="true" \
 -e TRAVIS_COMMIT="$GIT_SHA" \
@@ -45,4 +45,6 @@ sudo docker run -d  --name ${BUILD_ENV}_${GIT_SHA} \
 -e SL_API_KEY="${SL_API_KEY}" \
 -e IBMID="${IBMID}" \
 -e IBMID_PASSWORD="${IBMID_PASSWORD}" \
+-e FTP_USERNMAME="${FTP_USERNMAME}" \
+-e FTP_PASSWORD="${FTP_PASSWORD}" \
 e2erunner:${BUILD_ENV}_${GIT_SHA}
