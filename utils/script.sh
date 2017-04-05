@@ -11,6 +11,7 @@ REPORT_URL=$3
 CODE_REPO=/tmp/${BUILD_ENV}/${GIT_SHA}
 GIT_REPO=git@github.ibm.com:terraform-devops-tools/e2etest.git
 
+
 mkdir -p $CODE_REPO
 
 cd $CODE_REPO
@@ -43,6 +44,7 @@ sudo docker run -d  --name ${BUILD_ENV}_${GIT_SHA} \
 -e IBMID="${IBMID}" \
 -e IBMID_PASSWORD="${IBMID_PASSWORD}" \
 -e SL_ACCOUNT_NUMBER="${SL_ACCOUNT_NUMBER}" \
+-e TIMESTAMP="${TIMESTAMP}"
 -e FTP_USERNAME="${FTP_USERNAME}" \
 -e FTP_PASSWORD="${FTP_PASSWORD}" \
 e2erunner:${BUILD_ENV}_${GIT_SHA}
