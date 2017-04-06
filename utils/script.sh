@@ -10,7 +10,9 @@ GIT_SHA=$2
 REPORT_URL=$3
 CODE_REPO=/tmp/${BUILD_ENV}/${GIT_SHA}
 GIT_REPO=git@github.ibm.com:terraform-devops-tools/e2etest.git
-TIMESTAMP=`date +'%y.%m.%d %H:%M:%S'`
+TIMESTAMP=`date +'%y%m%d%H%M%S'`
+
+echo $TIMESTAMP
 
 mkdir -p $CODE_REPO
 
