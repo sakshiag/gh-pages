@@ -19,7 +19,8 @@ type GitRef struct {
 	} `json:"object"`
 }
 
-const gitAPI = "https://github.ibm.com/api/v3/repos/terraform-devops-tools/e2etest/git/refs/heads/master"
+const e2eAPI = "https://github.ibm.com/api/v3/repos/terraform-devops-tools/e2etest/git/refs/heads/master"
+const gitAPI = "https://github.ibm.com/api/v3/repos/terraform-devops-tools/blueprint/git/refs/heads/master"
 const defaultReportURL = "http://9.47.83.184:8080"
 
 func init() {
@@ -30,8 +31,8 @@ func init() {
 	}
 }
 
-func headSHA() (string, error) {
-	req, _ := http.NewRequest("GET", gitAPI, nil)
+func headSHA(API string) (string, error) {
+	req, _ := http.NewRequest("GET", API, nil)
 	req.Header.Add("Authorization", fmt.Sprintf("token %s", githubToken))
 	res, err := httpClient.Do(req)
 	if err != nil {
@@ -52,6 +53,7 @@ func headSHA() (string, error) {
 func E2EHandler(w http.ResponseWriter, r *http.Request) {
 	buildEnv := r.Header.Get("BUILD_ENV")
 	gitSHA := r.Header.Get("GIT_SHA")
+	e2eSHA := r.Header.Get("E2E_SHA")
 	reportURL := r.Header.Get("REPORT_URL")
 
 	if reportURL == "" {
@@ -68,18 +70,34 @@ func E2EHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if gitSHA == "" {
-		sha, err := headSHA()
+		sha, err := headSHA(gitAPI)
 		if err != nil {
 			w.WriteHeader(500)
 			w.Write([]byte(fmt.Sprintf("Couldn't get the git sha %v", err)))
 			return
 		}
 		gitSHA = sha
-		log.Println("Will run e2e against", gitSHA)
+		
+	}
+	
+	if e2eSHA == "" {
+		log.Println("E2E_SHA not present in the request Header. Will fetch the latest commit")
 	}
 
+	if e2eSHA == "" {
+		sha, err := headSHA(e2eAPI)
+		if err != nil {
+			w.WriteHeader(500)
+			w.Write([]byte(fmt.Sprintf("Couldn't get the git sha %v", err)))
+			return
+		}
+		e2eSHA = sha
+		log.Println("Will run e2e against", gitSHA)
+	}
+     
+    log.Println("Will run e2e test against %s for terraform build %s", e2eSHA, gitSHA)
 	go func() {
-		output, _ := Rune2e(buildEnv, gitSHA, reportURL)
+		output, _ := Rune2e(buildEnv, gitSHA, e2eSHA, reportURL)
 		fmt.Printf("%s\n", output)
 	}()
 

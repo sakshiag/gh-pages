@@ -7,7 +7,8 @@ sudo docker rm $(sudo docker ps -a -f status=exited -q)
 
 BUILD_ENV=$1
 GIT_SHA=$2
-REPORT_URL=$3
+E2E_SHA=$3
+REPORT_URL=$4
 CODE_REPO=/tmp/${BUILD_ENV}/${GIT_SHA}
 GIT_REPO=git@github.ibm.com:terraform-devops-tools/e2etest.git
 TIMESTAMP=`date +'%y%m%d%H%M%S'`
@@ -21,8 +22,8 @@ cd $CODE_REPO
 echo "Cloning $GIT_REPO at  $CODE_REPO"
 git clone $GIT_REPO .
 
-echo "Checking out $GIT_SHA to temp branch"
-git checkout -b temp $GIT_SHA
+echo "Checking out $E2E_SHA to temp branch"
+git checkout -b temp $E2E_SHA
 
 
 #Prep the e2erunner environment with DOCKER_USER and DOCKER_PASSWORD env variables
@@ -37,6 +38,7 @@ echo "Run the docker which will run the e2e by calling build.sh of the main repo
 sudo docker run -d  --name ${BUILD_ENV}_${GIT_SHA} \
 -e e2e="true" \
 -e TRAVIS_COMMIT="$GIT_SHA" \
+-e E2E_COMMIT="$E2E_SHA" \
 -e REPORT_URL="$REPORT_URL" \
 -e TESTARGS="${TESTARGS}" \
 -e BUILD_ENV="${BUILD_ENV}" \

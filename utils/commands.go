@@ -15,8 +15,8 @@ func init() {
 }
 
 //Rune2e executes the script which builds and run the Docker with e2e code
-func Rune2e(buildEnv, gitSHA, reportURL string) ([]byte, error) {
-	cmd := exec.Command("./script.sh", buildEnv, gitSHA, reportURL)
+func Rune2e(buildEnv, gitSHA, e2eSHA, reportURL string) ([]byte, error) {
+	cmd := exec.Command("./script.sh", buildEnv, gitSHA, e2eSHA, reportURL)
 	fmt.Println(cmd.Args)
 	cmd.Dir = currentDir
 	stdoutStderr, err := cmd.CombinedOutput()
