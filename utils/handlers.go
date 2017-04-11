@@ -20,7 +20,7 @@ type GitRef struct {
 }
 
 const e2eAPI = "https://github.ibm.com/api/v3/repos/terraform-devops-tools/e2etest/git/refs/heads/master"
-const gitAPI = "https://github.ibm.com/api/v3/repos/terraform-devops-tools/blueprint/git/refs/heads/master"
+const gitAPI = "https://github.ibm.com/api/v3/repos/blueprint/bluemix-terraform-provider-dev/git/refs/heads/master"
 const defaultReportURL = "http://9.47.83.184:8080"
 
 func init() {
@@ -95,7 +95,7 @@ func E2EHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("Will run e2e against", gitSHA)
 	}
      
-    log.Println("Will run e2e test against %s for terraform build %s", e2eSHA, gitSHA)
+    log.Println(fmt.Sprintf("Will run e2e test against %s for terraform build %s", e2eSHA, gitSHA))
 	go func() {
 		output, _ := Rune2e(buildEnv, gitSHA, e2eSHA, reportURL)
 		fmt.Printf("%s\n", output)
