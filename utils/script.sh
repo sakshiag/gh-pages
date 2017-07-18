@@ -9,7 +9,7 @@ BUILD_ENV=$1
 GIT_SHA=$2
 E2E_SHA=$3
 REPORT_URL=$4
-CODE_REPO=/tmp/${BUILD_ENV}/${GIT_SHA}
+CODE_REPO=/tmp/${BUILD_ENV}/${E2E_SHA}
 GIT_REPO=git@github.ibm.com:terraform-devops-tools/e2etest.git
 TIMESTAMP=`date +'%y%m%d%H%M%S'`
 
@@ -30,10 +30,11 @@ git checkout -b temp $E2E_SHA
 sudo docker login -u "$DOCKER_USER" -p "$DOCKER_PASSWORD" -e "$DOCKER_EMAIL" $artifactory_registry
 
 echo "Building the docker e2erunner:${BUILD_ENV}_${GIT_SHA}"
-sudo docker build --build-arg FTP_USERNAME="${FTP_USERNAME}" --build-arg FTP_PASSWORD="${FTP_PASSWORD}" -t e2erunner:${BUILD_ENV}_${GIT_SHA} .
+sudo docker build --build-arg FTP_USERNAME="${FTP_USERNAME}" --build-arg FTP_PASSWORD="${FTP_PASSWORD}" -t e2erunner:${BUILD_ENV}_${GIT_SHA} . --no-cache
 
 echo "Run the docker which will run the e2e by calling build.sh of the main repo"
 #SL_USERNAME and SL_API_KEY must be set in the e2e runner enviroments
+#BM_API_KEY must be set in the e2e runner enviroments
 #FTP_USERNMAME and FTP_PASSWORD must be set in the e2e runner environments
 sudo docker run -d  --name ${BUILD_ENV}_${GIT_SHA} \
 -e e2e="true" \
@@ -45,10 +46,10 @@ sudo docker run -d  --name ${BUILD_ENV}_${GIT_SHA} \
 -e SOFTLAYER_TIMEOUT=300 \
 -e SL_USERNAME="${SL_USERNAME}" \
 -e SL_API_KEY="${SL_API_KEY}" \
--e IBMID="${IBMID}" \
--e IBMID_PASSWORD="${IBMID_PASSWORD}" \
--e SL_ACCOUNT_NUMBER="${SL_ACCOUNT_NUMBER}" \
 -e TIMESTAMP="${TIMESTAMP}" \
 -e FTP_USERNAME="${FTP_USERNAME}" \
 -e FTP_PASSWORD="${FTP_PASSWORD}" \
+-e BM_API_KEY="${BM_API_KEY}" \
+-e TF_VAR_org="${TF_VAR_org}" \
+-e TF_VAR_space="${TF_VAR_space}" \
 e2erunner:${BUILD_ENV}_${GIT_SHA}
