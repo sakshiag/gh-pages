@@ -6,7 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/terrform-schematics-demo/e2erunner/utils"
+	"github.com/terraform-ibm-provider-api/utils"
 )
 
 func main() {

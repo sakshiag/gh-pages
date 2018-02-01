@@ -15,6 +15,9 @@ func cloneRepo(msg Message) ([]byte, string, error) {
 	fmt.Println(cmd.Args)
 	cmd.Dir = currentDir
 	stdoutStderr, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, "", err
+	}
 	urlPath, err := url.Parse(msg.GitURL)
 	if err != nil {
 		return nil, "", err
