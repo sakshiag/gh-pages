@@ -1,109 +1,263 @@
 package utils
 
 import (
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"path"
+	"time"
+
+	"github.com/gorilla/mux"
 )
 
 var httpClient *http.Client
 var githubToken string
 var githubIBMToken string
+var planTimeOut = 20 * time.Minute
 
-//GitRef contains the git ref response
-type GitRef struct {
-	Object struct {
-		Sha string `json:"sha"`
-	} `json:"object"`
+// Message -
+type Message struct {
+	GitURL        string            `json:"git_url,required" description:"The git url of your configuraltion"`
+	VariableStore *VariablesRequest `json:"variablestore,omitempty" description:"The environments' variable store"`
+	LOGLEVEL      string            `json:"log_level,omitempty" description:"The log level defing by user."`
 }
 
-const e2eAPI = "https://github.ibm.com/api/v3/repos/terraform-devops-tools/e2etest/git/refs/heads/master"
-const gitAPI = "https://api.github.com/repos/IBM-Bluemix/terraform-provider-ibm/git/refs/heads/master"
-const defaultReportURL = "http://9.47.83.184:8080"
+// ConfigResponse -
+type ConfigResponse struct {
+	ID string `json:"id,required" description:"ID of the git operation."`
+}
+
+// ActionResponse -
+type ActionResponse struct {
+	ConfigName string `json:"id,required" description:"Name of the configuration"`
+	Output     string `json:"output,required" description:"Output logs of terraform command"`
+	Error      string `json:"error,required" description:"Error logs for terraform command"`
+	Action     string `json:"action,required" description:"Action Name"`
+}
+
+// VariablesRequest -
+type VariablesRequest []EnvironmentVariableRequest
+
+// EnvironmentVariableRequest -
+type EnvironmentVariableRequest struct {
+	Name  string `json:"name,required" binding:"required" description:"The variable's name"`
+	Value string `json:"value,required" binding:"required" description:"The variable's value"`
+}
+
+var currentDir = "/tmp"
+
+var logDir = "/tmp/log/"
+
+var stateDir = "/tmp/state"
 
 func init() {
-	httpClient = &http.Client{CheckRedirect: nil}
-	githubToken = os.Getenv("GITHUB_API_TOKEN")
-	if githubToken == "" {
-		panic("GITHUB_API_TOKEN is empty")
+
+	if _, err := os.Stat(logDir); os.IsNotExist(err) {
+		os.MkdirAll(logDir, os.ModePerm)
+	}
+	if _, err := os.Stat(stateDir); os.IsNotExist(err) {
+		os.MkdirAll(stateDir, os.ModePerm)
 	}
 }
 
-func headSHA(API, TYPE string) (string, error) {
-	req, _ := http.NewRequest("GET", API, nil)
-	if TYPE == "e2e" {
-		req.Header.Add("Authorization", fmt.Sprintf("token %s", githubToken))
+//ConfHandler handles request to kickoff git clone of the repo.
+func ConfHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Invalid request method.", 405)
 	}
-	res, err := httpClient.Do(req)
-	if err != nil {
-		log.Printf("Couldn't read the git sha. Error is %v", err)
-		return "", err
-	}
-	decoder := json.NewDecoder(res.Body)
-	var ref GitRef
-	err = decoder.Decode(&ref)
-	if err != nil {
-		log.Printf("Couldn't decode the git sha. Error is %v", err)
-		return "", err
-	}
-	return ref.Object.Sha, nil
-}
 
-//e2eHandler handles request to kickoff e2e
-func E2EHandler(w http.ResponseWriter, r *http.Request) {
-	buildEnv := r.Header.Get("BUILD_ENV")
-	gitSHA := r.Header.Get("GIT_SHA")
-	e2eSHA := r.Header.Get("E2E_SHA")
-	reportURL := r.Header.Get("REPORT_URL")
-
-	if reportURL == "" {
-		reportURL = defaultReportURL
-	}
-	if buildEnv == "" {
-		w.WriteHeader(400)
-		w.Write([]byte("Missing BUILD_ENV"))
+	// Read body
+	b, err := ioutil.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		http.Error(w, err.Error(), 500)
 		return
 	}
 
-	if gitSHA == "" {
-		log.Println("GIT_SHA not present in the request Header. Will fetch the latest commit")
+	// Unmarshal
+	var msg Message
+	var response ConfigResponse
+	err = json.Unmarshal(b, &msg)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	log.Println(msg.GitURL)
+	if msg.GitURL == "" {
+		w.WriteHeader(400)
+		w.Write([]byte("EMPTY GIT URL"))
+		return
 	}
 
-	if gitSHA == "" {
-		sha, err := headSHA(gitAPI, "public")
-		if err != nil {
-			w.WriteHeader(500)
-			w.Write([]byte(fmt.Sprintf("Couldn't get the git sha %v", err)))
-			return
-		}
-		gitSHA = sha
-
+	if msg.LOGLEVEL != "" {
+		os.Setenv("TF_LOG", msg.LOGLEVEL)
 	}
 
-	if e2eSHA == "" {
-		log.Println("E2E_SHA not present in the request Header. Will fetch the latest commit")
+	log.Println("Will clone git repo")
+
+	_, id, err := cloneRepo(msg)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	log.Println("\n", id)
+
+	response.ID = id
+	log.Println(response)
+
+	output, err := json.Marshal(response)
+	if err != nil {
+		return
 	}
 
-	if e2eSHA == "" {
-		sha, err := headSHA(e2eAPI, "e2e")
-		if err != nil {
-			w.WriteHeader(500)
-			w.Write([]byte(fmt.Sprintf("Couldn't get the git sha %v", err)))
-			return
-		}
-		e2eSHA = sha
-		log.Println("Will run e2e against", gitSHA)
-	}
+	confDir := path.Join(currentDir, id)
 
-	log.Println(fmt.Sprintf("Will run e2e test against %s for terraform build %s", e2eSHA, gitSHA))
+	b = make([]byte, 10)
+	rand.Read(b)
+	randomID := fmt.Sprintf("%x", b)
+
+	err = TerraformInit(confDir, id, &planTimeOut, randomID)
+	if err != nil {
+		http.Error(w, err.Error(), 500)
+		return
+	}
+	w.Header().Set("content-type", "application/json")
+	w.Write(output)
+}
+
+//PlanHandler handles request to run terraform plan.
+func PlanHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Invalid request method.", 405)
+		return
+	}
+	vars := mux.Vars(r)
+	repoName := vars["repo_name"]
+
+	var response ConfigResponse
+
+	log.Println("Url Param 'repo name' is: " + repoName)
+	confDir := path.Join(currentDir, repoName)
+
+	b := make([]byte, 10)
+	rand.Read(b)
+	randomID := fmt.Sprintf("%x", b)
 	go func() {
-		output, _ := Rune2e(buildEnv, gitSHA, e2eSHA, reportURL)
-		fmt.Printf("%s\n", output)
+		err := TerraformPlan(confDir, repoName, &planTimeOut, randomID)
+		if err != nil {
+			return
+		}
 	}()
+	w.WriteHeader(202)
+	response.ID = randomID
+	output, err := json.Marshal(response)
+	if err != nil {
+		return
+	}
+	w.Header().Set("content-type", "application/json")
+	w.Write(output)
 
-	io.WriteString(w, "Request to start the e2e submitted succefully")
+}
+
+//ApplyHandler handles request to run terraform plan.
+func ApplyHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Invalid request method.", 405)
+		return
+	}
+	var response ConfigResponse
+	vars := mux.Vars(r)
+	repoName := vars["repo_name"]
+
+	log.Println("Url Param 'repo name' is: " + repoName)
+	confDir := path.Join(currentDir, repoName)
+
+	b := make([]byte, 10)
+	rand.Read(b)
+	randomID := fmt.Sprintf("%x", b)
+	go func() {
+		err := TerraformApply(confDir, stateDir, repoName, &planTimeOut, randomID)
+		if err != nil {
+			return
+		}
+	}()
+	w.WriteHeader(202)
+	response.ID = randomID
+	output, err := json.Marshal(response)
+	if err != nil {
+		return
+	}
+	w.Header().Set("content-type", "application/json")
+	w.Write(output)
+
+}
+
+//DestroyHandler handles request to run terraform plan.
+func DestroyHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "POST" {
+		http.Error(w, "Invalid request method.", 405)
+		return
+	}
+	var response ConfigResponse
+	vars := mux.Vars(r)
+	repoName := vars["repo_name"]
+
+	log.Println("Url Param 'repo name' is: " + repoName)
+	confDir := path.Join(currentDir, repoName)
+
+	b := make([]byte, 10)
+	rand.Read(b)
+	randomID := fmt.Sprintf("%x", b)
+	go func() {
+		err := TerraformDestroy(confDir, stateDir, repoName, &planTimeOut, randomID)
+		if err != nil {
+			return
+		}
+	}()
+	w.WriteHeader(202)
+	response.ID = randomID
+	output, err := json.Marshal(response)
+	if err != nil {
+		return
+	}
+	w.Header().Set("content-type", "application/json")
+	w.Write(output)
+
+}
+
+//LogHandler handles request to run terraform plan.
+func LogHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != "GET" {
+		http.Error(w, "Invalid request method.", 405)
+		return
+	}
+	var response ActionResponse
+
+	vars := mux.Vars(r)
+	repoName := vars["repo_name"]
+	action := vars["action"]
+	logID := vars["logID"]
+
+	log.Println("Url Param 'repo name' is: " + repoName)
+	log.Println("Url Param 'action' is: " + action)
+	log.Println("Url Param 'log id' is: " + logID)
+
+	outFile, errFile, err := readLogFile(logID)
+
+	response.ConfigName = repoName
+	response.Output = outFile
+	response.Error = errFile
+	response.Action = action
+
+	output, err := json.Marshal(response)
+	if err != nil {
+		return
+	}
+	w.Header().Set("content-type", "application/json")
+	w.Write(output)
 
 }
