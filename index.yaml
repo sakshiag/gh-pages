@@ -3,11 +3,11 @@ entries:
   terrform_provider_service:
   - apiVersion: v1
     appVersion: "1.0"
-    created: 2018-02-02T12:26:12.12933788+05:30
+    created: 2018-02-04T22:37:37.254207338+05:30
     description: A Helm chart for Kubernetes
-    digest: 6a203fad652f490bcc4685eb92181af14b35f926a5da533fe895c445abfeb64c
+    digest: 5072e5379e2d6652f1a74d5059f94a57969f1deb3ac085aeadca294ed7f86dba
     name: terrform_provider_service
     urls:
-    - https://pages.github.ibm.com/sakshiag/terraform-ibm-provider-api/terrform_provider_service-0.1.0.tgz
+    - https://sakshiag.github.io/gh-pages/terrform_provider_service-0.1.0.tgz
     version: 0.1.0
-generated: 2018-02-02T12:26:12.127811991+05:30
+generated: 2018-02-04T22:37:37.251837156+05:30
